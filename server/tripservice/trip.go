@@ -38,6 +38,7 @@ func (*Service) GetTrip(c context.Context, req *trippb.GetTripRequest) (*trippb.
 					Longitude: 118,
 				},
 			},
+			Status: trippb.TripStatus_IN_PROGRESS,
 		},
 	}, nil
 }
