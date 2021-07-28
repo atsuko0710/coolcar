@@ -34,7 +34,8 @@ func startGRPCGateway() {
 	mux := runtime.NewServeMux(runtime.WithMarshalerOption(
 		runtime.MIMEWildcard, &runtime.JSONPb{
 			MarshalOptions: protojson.MarshalOptions{
-				UseEnumNumbers:  true,
+				UseEnumNumbers: true,
+				UseProtoNames:  true,
 			},
 		},
 	))
@@ -49,4 +50,3 @@ func startGRPCGateway() {
 		log.Fatalf("cannot listen and server:%v", err)
 	}
 }
- 
