@@ -6,6 +6,7 @@ import (
 
 	authpb "coolcar/server/auth/api/gen/v1"
 	"coolcar/server/auth/auth"
+	"coolcar/server/wechat"
 
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -24,6 +25,10 @@ func main() {
 
 	s := grpc.NewServer()
 	authpb.RegisterAuthServiceServer(s, &auth.Service{
+		OpenIDResolver: &wechat.Service{
+			AppID: "wx2686c8410b229d6f",
+			AppSecret: "db2905a97cc3409549141ae2446966e5",
+		},
 		Logger: logger,
 	})
 	err = s.Serve(lis)
