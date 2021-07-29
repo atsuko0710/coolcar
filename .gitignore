@@ -15,3 +15,4 @@
 # vendor/
 wx/node_modules
 wx/miniprogram/**/*.js
+server/go.sum
