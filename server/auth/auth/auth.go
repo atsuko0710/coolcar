@@ -7,6 +7,7 @@ import (
 	"context"
 	authpb "coolcar/server/auth/api/gen/v1"
 	"coolcar/server/auth/dao"
+	"time"
 
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
@@ -16,12 +17,18 @@ import (
 type Service struct {
 	Logger         *zap.Logger
 	Mongo          *dao.Mongo
+	TokenGenerator TokenGenerator
+	TokenExpire    time.Duration
 	OpenIDResolver OpenIDResolver
 }
 
 // OpenIDResolver resolvers an authorization code to an open id
 type OpenIDResolver interface {
-	 Resolver(code string) (string, error)
+	Resolver(code string) (string, error)
+}
+
+type TokenGenerator interface {
+	GenerateToken(accountID string, expire time.Duration) (string, error)
 }
 
 func (s *Service) Login(c context.Context, req *authpb.LoginRequest) (*authpb.LoginResponse, error) {
@@ -38,8 +45,14 @@ func (s *Service) Login(c context.Context, req *authpb.LoginRequest) (*authpb.Lo
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
+	tkn, err := s.TokenGenerator.GenerateToken(accountId, s.TokenExpire)
+	if err != nil {
+		s.Logger.Error("cannot generate token:", zap.Error(err))
+		return nil, status.Errorf(codes.Internal, "")
+	}
+
 	return &authpb.LoginResponse{
-		AccessToken: "token for account id " + accountId,
-		ExpiresIn:   7200,
+		AccessToken: tkn,
+		ExpiresIn:   int32(s.TokenExpire.Seconds()),
 	}, nil
 }

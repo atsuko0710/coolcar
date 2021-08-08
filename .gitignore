@@ -16,3 +16,4 @@
 wx/node_modules
 wx/miniprogram/**/*.js
 server/go.sum
+server/auth/auth/private.key

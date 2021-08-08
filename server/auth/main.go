@@ -2,14 +2,19 @@ package main
 
 import (
 	"context"
+	"io/ioutil"
 	"log"
 	"net"
+	"os"
+	"time"
 
 	authpb "coolcar/server/auth/api/gen/v1"
 	"coolcar/server/auth/auth"
+	"coolcar/server/auth/auth/token"
 	"coolcar/server/auth/dao"
 	"coolcar/server/wechat"
 
+	"github.com/dgrijalva/jwt-go"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
@@ -33,6 +38,21 @@ func main() {
 		logger.Fatal("cannot connect mongo", zap.Error(err))
 	}
 
+	pkFile, err := os.Open("auth/private.key")
+	if err != nil {
+		logger.Fatal("cannot open private key file", zap.Error(err))
+	}
+
+	pkBytes, err := ioutil.ReadAll(pkFile)
+	if err != nil {
+		logger.Fatal("cannot read private key", zap.Error(err))
+	}
+
+	privateKey,err := jwt.ParseRSAPrivateKeyFromPEM(pkBytes)
+	if err != nil {
+		logger.Fatal("cannot parse private key", zap.Error(err))
+	}
+
 	s := grpc.NewServer()
 	authpb.RegisterAuthServiceServer(s, &auth.Service{
 		OpenIDResolver: &wechat.Service{
@@ -41,6 +61,8 @@ func main() {
 		},
 		Mongo: dao.NewMongo(mongoClient.Database("coolcar")),
 		Logger: logger,
+		TokenExpire: 2 * time.Hour,
+		TokenGenerator: token.NewJWTTokenGenerator("coolcar/auth", privateKey),
 	})
 	err = s.Serve(lis)
 	logger.Fatal("cannot server", zap.Error(err))
