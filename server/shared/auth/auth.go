@@ -58,7 +58,7 @@ func (i *interceptor) HandleReq(ctx context.Context, req interface{}, info *grpc
 	if err != nil {
 		return nil, status.Errorf(codes.Unauthenticated, "token not valid: %v", err)
 	}
-	return handler(ContextWithAccountID(ctx, aid), req)
+	return handler(ContextWithAccountID(ctx, AccountID(aid)), req)
 }
 
 func tokenFromContext(ctx context.Context) (string, error) {
@@ -87,16 +87,22 @@ func tokenFromContext(ctx context.Context) (string, error) {
 
 type accountIDKey struct{}
 
+type AccountID string
+
+func (a AccountID) String() string {
+	return string(a)
+}
+
 // 用 accountId 生成 context 
-func ContextWithAccountID(ctx context.Context, aid string) context.Context {
+func ContextWithAccountID(ctx context.Context, aid AccountID) context.Context {
 	return context.WithValue(ctx, accountIDKey{}, aid)
 }
 
 // 从 context 中获取 accountID 
-func AccountIDFromContext(ctx context.Context) (string, error) {
+func AccountIDFromContext(ctx context.Context) (AccountID, error) {
 	v := ctx.Value(accountIDKey{})
 	// 判断获取的值是否是 string 类型
-	aid, ok := v.(string)
+	aid, ok := v.(AccountID)
 	if !ok {
 		return "", status.Errorf(codes.Unauthenticated, "")
 	}
