@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	rentalpb "coolcar/server/rental/api/gen/v1"
-	"coolcar/server/rental/trip"
+	// rentalpb "coolcar/server/rental/api/gen/v1"
+	// "coolcar/server/rental/trip"
 	"coolcar/server/shared/server"
 
 	"go.uber.org/zap"
@@ -23,9 +23,9 @@ func main() {
 		Name:               "rental",
 		AuthPublicKeyFiled: "shared/auth/public.key",
 		RegisterServiceFunc: func(s *grpc.Server) {
-			rentalpb.RegisterTripServiceServer(s, &trip.Service{
-				Logger: logger,
-			})
+			// rentalpb.RegisterTripServiceServer(s, &rentalpb.TripServiceServer{
+				
+			// })
 		},
 	}))
 }

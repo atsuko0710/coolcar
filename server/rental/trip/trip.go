@@ -15,11 +15,11 @@ type Service struct {
 	Logger         *zap.Logger
 }
 
-func (s *Service) CreateTrip(ctx context.Context, in *rentalpb.CreateTripRequest) (*rentalpb.CreateTripResponse, error) {
-	aid, err := auth.AccountIDFromContext(ctx)
+func (s *Service) CreateTrip(ctx context.Context, in *rentalpb.CreateTripRequest) (*rentalpb.TripEntity, error) {
+	// aid, err := auth.AccountIDFromContext(ctx)
+	_, err := auth.AccountIDFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
-	s.Logger.Info("create trip", zap.String("start", in.Start), zap.String("accountId", aid.String()))
 	return nil, status.Error(codes.Unimplemented, "")
 }
