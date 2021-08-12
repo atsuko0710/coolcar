@@ -3,7 +3,7 @@ package dao
 import (
 	"fmt"
 
-	mgo "coolcar/server/shared"
+	mgutil "coolcar/server/shared/mongo"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,7 +15,7 @@ type Mongo struct {
 	col *mongo.Collection
 }
 
-const openIDField = "open_id";
+const openIDField = "open_id"
 
 func NewMongo(db *mongo.Database) *Mongo {
 	return &Mongo{
@@ -24,18 +24,22 @@ func NewMongo(db *mongo.Database) *Mongo {
 }
 
 func (m *Mongo) ResolveAccountId(c context.Context, OpenID string) (string, error) {
+	insertedID := mgutil.NewObjID()
+
 	res := m.col.FindOneAndUpdate(c, bson.M{
 		openIDField: OpenID,
-	}, mgo.Set(bson.M{
-		openIDField:OpenID,
+	}, mgutil.SetOnInsert(bson.M{
+		mgutil.IDFieldName: insertedID,
+		openIDField:        OpenID,
 	}), options.FindOneAndUpdate().
 		SetUpsert(true).
 		SetReturnDocument(options.After))
+		
 	if err := res.Err(); err != nil {
 		return "", fmt.Errorf("cannot FindOneAndUpdate:%v", err)
 	}
 
-	var row mgo.ObjID
+	var row mgutil.IDField
 
 	err := res.Decode(&row)
 	if err != nil {
