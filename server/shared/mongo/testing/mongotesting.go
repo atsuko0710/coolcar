@@ -24,6 +24,9 @@ var mongoURI string
 
 // 创建mongo链接
 func NewClient(c context.Context) (*mongo.Client, error) {
+	
+	mongoURI = "mongodb://root:123456@127.0.0.1:27017/coolcar?authSource=admin&readPreference=primary&directConnection=true&ssl=false"
+	
 	if mongoURI == "" {
 		return nil, fmt.Errorf("mong uri not set. Please run RunWithMongoInDocker in TestMain")
 	}

@@ -10,12 +10,7 @@ import (
 	mongotesting "coolcar/server/shared/mongo/testing"
 )
 
-var mongoURI string
-
 func TestCreateTrip(t *testing.T) {
-
-	mongoURI = "mongodb://root:123456@127.0.0.1:27017"
-
 	c := context.Background()
 
 	mc, err := mongotesting.NewClient(c)
