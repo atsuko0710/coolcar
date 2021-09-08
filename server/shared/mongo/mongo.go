@@ -1,10 +1,12 @@
 package mgutil
 
 import (
+	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"coolcar/server/shared/mongo/objid"
 )
 
 const (
@@ -21,6 +23,12 @@ type UpdateAtField struct {
 }
 
 var NewObjID = primitive.NewObjectID
+
+func NewObjIDWithValue(id fmt.Stringer) {
+	NewObjID = func() primitive.ObjectID {
+		return objid.MustFromID(id)
+	}
+}
 
 var UpdateAt = func() int64 {
 	return time.Now().UnixNano()

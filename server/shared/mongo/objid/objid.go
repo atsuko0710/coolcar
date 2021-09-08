@@ -24,6 +24,6 @@ func ToAccountId(oid primitive.ObjectID) id.AccountID {
 	return id.AccountID(oid.Hex())
 }
 
-func ToTripId(oid primitive.ObjectID) id.TripID {
+func ToTripID(oid primitive.ObjectID) id.TripID {
 	return id.TripID(oid.Hex())
 }

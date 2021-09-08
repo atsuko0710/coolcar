@@ -69,3 +69,4 @@ func (m *Mongo) GetTrip(c context.Context, id id.TripID, accountID  id.AccountID
 	}
 	return &tr, nil
 }
+
