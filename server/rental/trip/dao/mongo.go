@@ -15,6 +15,7 @@ import (
 const (
 	tripField      = "trip"
 	accountIDField = tripField + ".accountid"
+	statusField    = tripField + ".status"
 )
 
 type Mongo struct {
@@ -47,7 +48,7 @@ func (m *Mongo) CreateTrip(c context.Context, trip *rentalpb.Trip) (*TripRecord,
 	return r, nil
 }
 
-func (m *Mongo) GetTrip(c context.Context, id id.TripID, accountID  id.AccountID) (*TripRecord, error) {
+func (m *Mongo) GetTrip(c context.Context, id id.TripID, accountID id.AccountID) (*TripRecord, error) {
 	objID, err := objid.FromID(id)
 	if err != nil {
 		return nil, fmt.Errorf("invalid id:%v", err)
@@ -70,3 +71,29 @@ func (m *Mongo) GetTrip(c context.Context, id id.TripID, accountID  id.AccountID
 	return &tr, nil
 }
 
+// GetTrips 可以根据状态查询路线
+
+func (m *Mongo) GetTrips(c context.Context, accountID id.AccountID, status rentalpb.TripStatus) ([]*TripRecord, error) {
+	filter := bson.M{
+		accountIDField: accountID.String(),
+	}
+	if status != rentalpb.TripStatus_TS_NOT_SPECIFIED {
+		filter[statusField]  = status
+	}
+
+	res, err := m.col.Find(c, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	var trips [] *TripRecord
+	for res.Next(c) {
+		var trip TripRecord
+		err := res.Decode(&trip)
+		if err != nil {
+			return nil, err
+		}
+		trips = append(trips, &trip)
+	}
+	return trips, nil
+}
