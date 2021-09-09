@@ -184,7 +184,7 @@ func TestGetTrips(t *testing.T) {
 		mgutil.NewObjIDWithValue(id.TripID(r.id))
 		_, err := m.CreateTrip(c, &rentalpb.Trip{
 			AccountId: r.accountID,
-			Status: r.status,
+			Status:    r.status,
 		})
 		if err != nil {
 			t.Fatalf("cannot create rows: %v", err)
@@ -192,10 +192,48 @@ func TestGetTrips(t *testing.T) {
 	}
 
 	cases := []struct {
-		name string
-	}{}
-}
+		name       string
+		accountID  string
+		status     rentalpb.TripStatus
+		wantCount  int
+		wantOnlyID string
+	}{
+		{
+			name:      "get_all",
+			accountID: "account_id_for_get_trips",
+			status:    rentalpb.TripStatus_TS_NOT_SPECIFIED,
+			wantCount: 4,
+		},
+		{
+			name:       "get_in_progress",
+			accountID:  "account_id_for_get_trips",
+			status:     rentalpb.TripStatus_IN_PROGRESS,
+			wantCount:  1,
+			wantOnlyID: "5f8132eb10714bf629489054",
+		},
+	}
 
+	for _, cc := range cases {
+		t.Run(cc.name, func(t *testing.T) {
+			res, err := m.GetTrips(context.Background(), id.AccountID(cc.accountID), cc.status)
+			if err != nil {
+				t.Fatalf("cannot get trips: %v", err)
+			}
+
+			if cc.wantCount != len(res) {
+				t.Errorf("incorrect result count; want: %d, got: %d",
+					cc.wantCount, len(res))
+			}
+
+			if cc.wantOnlyID != "" && len(res) > 0 {
+				if cc.wantOnlyID != res[0].ID.Hex() {
+					t.Errorf("only_id incorrect; want: %q, got %q",
+						cc.wantOnlyID, res[0].ID.Hex())
+				}
+			}
+		})
+	}
+}
 
 // func TestUpdateTrip(t *testing.T) {
 // 	c := context.Background()
@@ -281,7 +319,7 @@ func TestGetTrips(t *testing.T) {
 // 			t.Errorf("%s: incorrect updatedat: want %d, got %d",
 // 				cc.name, cc.now, updatedTrip.UpdatedAt)
 // 		}
-	// }
+// }
 // }
 
 func TestMain(m *testing.M) {

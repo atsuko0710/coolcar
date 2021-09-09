@@ -72,7 +72,6 @@ func (m *Mongo) GetTrip(c context.Context, id id.TripID, accountID id.AccountID)
 }
 
 // GetTrips 可以根据状态查询路线
-
 func (m *Mongo) GetTrips(c context.Context, accountID id.AccountID, status rentalpb.TripStatus) ([]*TripRecord, error) {
 	filter := bson.M{
 		accountIDField: accountID.String(),
@@ -96,4 +95,8 @@ func (m *Mongo) GetTrips(c context.Context, accountID id.AccountID, status renta
 		trips = append(trips, &trip)
 	}
 	return trips, nil
+}
+
+func (m *Mongo) UpdateTrip(c context.Context, tid id.TripID, aid id.AccountID, updateAt int64, trip *rentalpb.Trip) error {
+	
 }
