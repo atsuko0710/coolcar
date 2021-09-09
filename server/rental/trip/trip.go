@@ -41,9 +41,21 @@ func (s *Service) UpdateTrip(c context.Context, req *rentalpb.UpdateTripRequest)
 		return nil, status.Error(codes.Unauthenticated, "")
 	}
 
-	tr, err := s.Mongo.GetTrip(c, id.TripID(req.Id), aid)
+	tid := id.TripID(req.Id)
+	tr, err := s.Mongo.GetTrip(c, tid, aid)
 	if req.Current != nil {
-		
+		// 修改 Current 的位置
+		tr.Trip.Current = s.calcCurrentStataus(tr.Trip, req.Current.Location)
 	}
+	if req.EndTrip {
+		tr.Trip.End = tr.Trip.Current
+		tr.Trip.Status = rentalpb.TripStatus_FINISHED
+	}
+	s.Mongo.UpdateTrip(c, tid, aid, tr.UpdateAt, tr.Trip)
 	return nil, status.Error(codes.Unimplemented, "")
+}
+
+// calcCurrentStataus 计算当前状态
+func (s *Service) calcCurrentStataus(trip *rentalpb.Trip, cur *rentalpb.Location) *rentalpb.LocationStatus {
+	return nil
 }

@@ -77,7 +77,7 @@ func (m *Mongo) GetTrips(c context.Context, accountID id.AccountID, status renta
 		accountIDField: accountID.String(),
 	}
 	if status != rentalpb.TripStatus_TS_NOT_SPECIFIED {
-		filter[statusField]  = status
+		filter[statusField] = status
 	}
 
 	res, err := m.col.Find(c, filter)
@@ -85,7 +85,7 @@ func (m *Mongo) GetTrips(c context.Context, accountID id.AccountID, status renta
 		return nil, err
 	}
 
-	var trips [] *TripRecord
+	var trips []*TripRecord
 	for res.Next(c) {
 		var trip TripRecord
 		err := res.Decode(&trip)
@@ -98,5 +98,19 @@ func (m *Mongo) GetTrips(c context.Context, accountID id.AccountID, status renta
 }
 
 func (m *Mongo) UpdateTrip(c context.Context, tid id.TripID, aid id.AccountID, updateAt int64, trip *rentalpb.Trip) error {
-	
+	objID, err := objid.FromID(tid)
+	if err != nil {
+		return fmt.Errorf("invalid id: %v", err)
+	}
+
+	newUpdateAt := mgutil.UpdateAt  // 当前时间
+	_, err = m.col.UpdateOne(c, bson.M{
+		mgutil.IDFieldName:       objID,
+		accountIDField:           aid.String(),
+		mgutil.UpdateAtFieldName: updateAt,
+	}, mgutil.Set(bson.M{
+		tripField:                trip,
+		mgutil.UpdateAtFieldName: newUpdateAt,
+	}))
+	return err
 }
