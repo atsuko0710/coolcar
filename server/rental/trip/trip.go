@@ -14,16 +14,53 @@ import (
 )
 
 type Service struct {
-	Logger *zap.Logger
-	Mongo  *dao.Mongo
+	CarManager     CarManager
+	ProfileManager ProfileManager
+	Logger         *zap.Logger
+	Mongo          *dao.Mongo
+}
+
+// 防入侵
+type ProfileManager interface {
+	Verify(context.Context, id.AccountID) (id.IdentityID, error)
+}
+
+type CarManager interface {
+	Verify(context.Context, id.CarID, *rentalpb.Location) error
+	Unlock(context.Context, id.CarID) error
 }
 
 func (s *Service) CreateTrip(ctx context.Context, in *rentalpb.CreateTripRequest) (*rentalpb.TripEntity, error) {
-	// aid, err := auth.AccountIDFromContext(ctx)
-	_, err := auth.AccountIDFromContext(ctx)
+	aid, err := auth.AccountIDFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	// 验证驾驶证身份
+	iID, err := s.ProfileManager.Verify(ctx, aid)
+	if err != nil {
+		return nil, status.Errorf(codes.FailedPrecondition, err.Error())
+	}
+
+	// 检查车辆状态
+	carId := id.CarID(in.CarId)
+	err = s.CarManager.Verify(ctx, carId, in.Start.Location)
+	if err != nil {
+		return nil, status.Errorf(codes.FailedPrecondition, err.Error())
+	}
+
+	// 先创建行程，避免车开走了但没有记录
+	
+	
+	s.Mongo.CreateTrip(ctx, &rentalpb.Trip{
+		AccountId: aid.String(),
+		CarId: carId.String(),
+		IdentityId: iID.String(),
+		Status: rentalpb.TripStatus_IN_PROGRESS,
+	})
+
+	// 车辆开锁
+
 	return nil, status.Error(codes.Unimplemented, "")
 }
 

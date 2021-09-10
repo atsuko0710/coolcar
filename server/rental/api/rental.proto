@@ -28,6 +28,7 @@ message Trip {
     LocationStatus current = 4;  // 当前行驶状态
     LocationStatus end = 5;
     TripStatus status = 6;
+    string identity_id = 7;
 }
 
 message TripEntity {
