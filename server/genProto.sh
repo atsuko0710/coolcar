@@ -8,4 +8,4 @@ function genProto {
     protoc -I=${PROTO_PATH} --grpc-gateway_out=paths=source_relative,grpc_api_configuration=${PROTO_PATH}/${DOMAIN}.yaml:${GO_OUT_PATH} ${DOMAIN}.proto
 }
 
-genProto rental
+genProto car
