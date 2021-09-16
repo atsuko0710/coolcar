@@ -12,8 +12,13 @@ import (
 )
 
 type Service struct {
-	Logger *zap.Logger
-	Mongo  *dao.Mongo
+	Logger    *zap.Logger
+	Mongo     *dao.Mongo
+	Publisher Publisher
+}
+
+type Publisher interface {
+	Publish(context.Context, *carpb.CarEntity) error
 }
 
 func (s *Service) CreateCar(ctx context.Context, in *carpb.CreateCarRequest) (*carpb.CarEntity, error) {
@@ -45,7 +50,7 @@ func (s *Service) GetCars(ctx context.Context, in *carpb.GetCarsRequest) (*carpb
 	res := &carpb.GetCarsResponse{}
 	for _, cr := range cars {
 		res.Cars = append(res.Cars, &carpb.CarEntity{
-			Id: cr.ID.Hex(),
+			Id:  cr.ID.Hex(),
 			Car: cr.Car,
 		})
 	}
@@ -61,5 +66,19 @@ func (s *Service) UnlockCar(ctx context.Context, in *carpb.UnlockCarRequest) (*c
 }
 
 func (s *Service) UpdateCar(ctx context.Context, in *carpb.UpdateCarRequest) (*carpb.UpdateCarResponse, error) {
-	return nil, nil
+	update := &dao.CarUpdate{
+		Status:   in.Status,
+		Position: in.Position,
+	}
+	if in.Status == carpb.CarStatus_LOCKED {
+		update.Driver = &carpb.Driver{}
+		update.UpdateTripID = true
+		update.TripId = id.TripID("")
+	}
+	_, err := s.Mongo.UpdateCar(ctx, id.CarID(in.Id), carpb.CarStatus_CS_NOT_SPECIFIED.Enum(), update)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	// s.Publisher.Publish(ctx, car)
+	return &carpb.UpdateCarResponse{}, nil
 }

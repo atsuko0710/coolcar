@@ -14,6 +14,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+const (
+	carField      = "car"
+	statusField   = carField + ".status"
+	driverField   = carField + ".driver"
+	positionField = carField + ".position"
+	tripIDField   = carField + ".tripid"
+)
+
 type Mongo struct {
 	col *mongo.Collection
 }
@@ -33,7 +41,7 @@ func (m *Mongo) CreateCar(c context.Context) (*CarRecord, error) {
 	r := &CarRecord{
 		Car: &carpb.Car{
 			Position: &carpb.Location{
-				Latitude: 30,
+				Latitude:  30,
 				Longitude: 120,
 			},
 			Status: carpb.CarStatus_LOCKED,
@@ -84,4 +92,51 @@ func (m *Mongo) GetCars(c context.Context) ([]*CarRecord, error) {
 		cars = append(cars, &car)
 	}
 	return cars, nil
+}
+
+type CarUpdate struct {
+	Status       carpb.CarStatus
+	Position     *carpb.Location
+	Driver       *carpb.Driver
+	UpdateTripID bool
+	TripId       id.TripID
+}
+
+func (m *Mongo) UpdateCar(c context.Context, id id.CarID, status *carpb.CarStatus, update *CarUpdate) (*CarRecord, error) {
+	objID, err := objid.FromID(id)
+	if err != nil {
+		return nil, fmt.Errorf("invaild id:%v", err)
+	}
+
+	filter := bson.M{
+		mgutil.IDFieldName:objID,
+	}
+	u := bson.M{}
+	if status != carpb.CarStatus_CS_NOT_SPECIFIED.Enum() {
+		u[statusField] = status
+	}
+	if update.Driver != nil {
+		u[driverField] = update.Driver
+	}
+	if update.Position != nil {
+		u[positionField] = update.Position
+	}
+	if update.UpdateTripID  {
+		u[tripIDField] = update.TripId.String()
+	}
+	res := m.col.FindOneAndUpdate(c, filter, mgutil.Set(u), options.FindOneAndUpdate().SetReturnDocument(options.After))
+	return convertSingleResult(res)
+}
+
+func convertSingleResult(res *mongo.SingleResult) (*CarRecord, error) {
+	if err := res.Err(); err != nil {
+		return nil, err
+	}
+
+	var cr CarRecord
+	err := res.Decode(&cr)
+	if err != nil {
+		return nil, fmt.Errorf("cannot decode: %v", err)
+	}
+	return &cr, nil
 }
