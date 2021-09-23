@@ -11,9 +11,16 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/encoding/protojson"
+	"github.com/namsral/flag"
 )
 
+var addr = flag.String("addr", ":8080", "address to listen")
+var authAddr = flag.String("auth_addr", "localhost:8081", "address for auth service")
+var tripAddr = flag.String("trip_addr", "localhost:8082", "address for trip service")
+
 func main() {
+	flag.Parse()
+
 	lg, err := zap.NewDevelopment()
 	if err != nil {
 		log.Fatalf("cannot create logger:%v", err)
@@ -39,12 +46,12 @@ func main() {
 	}{
 		{
 			name:         "auth",
-			addr:         "localhost:8081",
+			addr:         *authAddr,
 			registerFunc: authpb.RegisterAuthServiceHandlerFromEndpoint,
 		},
 		{
 			name:         "rental",
-			addr:         "localhost:8082",
+			addr:         *tripAddr,
 			registerFunc: rentalpb.RegisterTripServiceHandlerFromEndpoint,
 		},
 	}
@@ -56,7 +63,6 @@ func main() {
 		} 
 	} 
 
-	addr := ":8080"
-	lg.Sugar().Infof("grpc gateway started at %s", addr)
-	lg.Sugar().Fatal(http.ListenAndServe(addr, mux))
+	lg.Sugar().Infof("grpc gateway started at %s", *addr)
+	lg.Sugar().Fatal(http.ListenAndServe(*addr, mux))
 }

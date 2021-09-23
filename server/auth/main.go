@@ -19,7 +19,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"github.com/namsral/flag"
 )
+
+var addr = flag.String("addr", ":8081", "address to listen")
+var mongoURI = flag.String("mongo_uri", "mongodb://root:123456@127.0.0.1:27017/coolcar?authSource=admin&readPreference=primary&appname=mongodb-vscode%200.6.10&directConnection=true&ssl=false", "mongo uri")
+var privateKeyFile = flag.String("private_key_file", "auth/private.key", "private key file")
 
 func main() {
 	logger, err := zap.NewDevelopment()
@@ -28,12 +33,12 @@ func main() {
 	}
 
 	c := context.Background()
-	mongoClient, err := mongo.Connect(c, options.Client().ApplyURI("mongodb://root:123456@127.0.0.1:27017/coolcar?authSource=admin&readPreference=primary&appname=mongodb-vscode%200.6.10&directConnection=true&ssl=false"))
+	mongoClient, err := mongo.Connect(c, options.Client().ApplyURI(*mongoURI))
 	if err != nil {
 		logger.Fatal("cannot connect mongo", zap.Error(err))
 	}
 
-	pkFile, err := os.Open("auth/private.key")
+	pkFile, err := os.Open(*privateKeyFile)
 	if err != nil {
 		logger.Fatal("cannot open private key file", zap.Error(err))
 	}
@@ -50,7 +55,7 @@ func main() {
 
 	logger.Sugar().Fatal(server.RunGRPCServer(&server.GRPCConfig{
 		Logger: logger,
-		Addr:   ":8081",
+		Addr:   *addr,
 		Name:   "auth",
 		RegisterServiceFunc: func(s *grpc.Server) {
 			authpb.RegisterAuthServiceServer(s, &auth.Service{
